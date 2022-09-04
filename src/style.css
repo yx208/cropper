@@ -1,0 +1,13 @@
+* {
+  padding: 0;
+  margin: 0;
+}
+
+.pt-16 {
+  padding-top: 32px;
+}
+
+.pa-16 {
+  padding: 32px;
+}
+
