@@ -213,8 +213,6 @@ class ImageCropper {
      */
     _onTouchStart(event) {
 
-        console.log('start');
-
         event.preventDefault();
         event.stopPropagation();
 
@@ -239,8 +237,6 @@ class ImageCropper {
      */
     _onTouchMove(event) {
 
-        console.log('move');
-
         event.preventDefault();
         event.stopPropagation();
 
@@ -263,8 +259,6 @@ class ImageCropper {
      * @private
      */
     _onTouchEnd(event) {
-
-        console.log('end');
 
         event.preventDefault();
         event.stopPropagation();
