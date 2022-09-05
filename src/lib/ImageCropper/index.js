@@ -7,9 +7,6 @@ import {
     HandleMode
 } from "./util.js";
 
-const testElement = document.createElement('div');
-testElement.style.cssText = 'max-height: 240px; overflow: hidden;';
-
 class ImageCropper {
 
     /**
@@ -73,10 +70,11 @@ class ImageCropper {
     ctx = null;
 
     /**
-     * @description 触摸位置
+     * @description 摁下的位置
+     * @type {CropperPosition}
      * @private
      */
-    touchPosition = {
+    pressPos = {
         x: 0,
         y: 0
     };
@@ -93,7 +91,7 @@ class ImageCropper {
      * @type {HandleMode}
      * @private
      */
-    handleMode = HandleMode.MOVE;
+    handleMode = HandleMode.NONE;
 
     /**
      * @param {ImageCropperOptions} options
@@ -115,10 +113,15 @@ class ImageCropper {
      * @private
      */
     _bindEvent() {
-        this.container.ele.addEventListener('touchstart', this._onTouchStart.bind(this), { passive: false });
-        this.container.ele.addEventListener('touchmove', this._onTouchMove.bind(this), { passive: false });
-        this.container.ele.addEventListener('touchend', this._onTouchEnd.bind(this), { passive: false });
-        if (!IS_MOBILE_DEVICE) {
+        if (IS_MOBILE_DEVICE) {
+            this.container.ele.addEventListener('touchstart', this._onTouchStart.bind(this), { passive: false });
+            this.container.ele.addEventListener('touchmove', this._onTouchMove.bind(this), { passive: false });
+            this.container.ele.addEventListener('touchend', this._onTouchEnd.bind(this), { passive: false });
+        } else {
+            this.container.ele.addEventListener('mousedown', this._onMousedown.bind(this), { passive: false });
+            this.container.ele.addEventListener('mousemove', this._onMousemove.bind(this), { passive: false });
+            this.container.ele.addEventListener('mouseup', this._onMouseup.bind(this), { passive: false });
+            this.container.ele.addEventListener('mouseleave', this._onMouseup.bind(this), { passive: false });
             this.container.ele.addEventListener('wheel', this._onMouseWheel.bind(this), { passive: false });
         }
     }
@@ -204,7 +207,58 @@ class ImageCropper {
      */
     _mount() {
         this.rootElement.append(this.container.ele);
-        this.rootElement.append(testElement);
+    }
+
+    /**
+     * 鼠标摁下
+     * @param {MouseEvent} event
+     * @private
+     */
+    _onMousedown(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.pressPos.x = event.clientX;
+        this.pressPos.y = event.clientY;
+        this.handleMode = HandleMode.MOVE;
+    }
+
+    /**
+     * 鼠标摁下移动
+     *
+     * @param {MouseEvent} event
+     * @private
+     */
+    _onMousemove(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (this.handleMode === HandleMode.NONE) return;
+
+        const moveX = this.pressPos.x - event.clientX;
+        const moveY = this.pressPos.y - event.clientY;
+        this.image.ele.style.transform = `translate3d(${this.image.x - moveX}px, ${this.image.y - moveY}px, 0)`;
+    }
+
+    /**
+     * 鼠标弹起
+     *
+     * @param {MouseEvent} event
+     * @private
+     */
+    _onMouseup(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (this.handleMode === HandleMode.NONE) return;
+
+        this.image.x = this.image.x - (this.pressPos.x - event.clientX);
+        this.image.y = this.image.y - (this.pressPos.y - event.clientY);
+        this._correctEdge();
+        this.handleMode = HandleMode.NONE;
     }
 
     /**
@@ -219,10 +273,10 @@ class ImageCropper {
         if (event.touches.length > 2) return;
 
         if (event.touches.length === 1) {
-            this.touchPosition.x = event.touches[0].clientX;
-            this.touchPosition.y = event.touches[0].clientY;
+            this.pressPos.x = event.touches[0].clientX;
+            this.pressPos.y = event.touches[0].clientY;
             this.handleMode = HandleMode.MOVE;
-        } else if (event.touches.length === /* 双指 */2) {
+        } else if (event.touches.length === 2) {
             this.scaleDistance = pointsDistance(
                 [event.touches[0].clientX, event.touches[0].clientY],
                 [event.touches[1].clientX, event.touches[1].clientY]
@@ -241,8 +295,8 @@ class ImageCropper {
         event.stopPropagation();
 
         if (this.handleMode === HandleMode.MOVE) {
-            const moveX = this.touchPosition.x - event.touches[0].clientX;
-            const moveY = this.touchPosition.y - event.touches[0].clientY;
+            const moveX = this.pressPos.x - event.touches[0].clientX;
+            const moveY = this.pressPos.y - event.touches[0].clientY;
             this.image.ele.style.transform = `translate3d(${this.image.x - moveX}px, ${this.image.y - moveY}px, 0)`;
         } else if (this.handleMode === HandleMode.ZOOM) {
             const distance = pointsDistance(
@@ -264,9 +318,14 @@ class ImageCropper {
         event.stopPropagation();
 
         if (this.handleMode === HandleMode.MOVE) {
-            this.image.x = this.image.x - (this.touchPosition.x - event.changedTouches[0].clientX);
-            this.image.y = this.image.y - (this.touchPosition.y - event.changedTouches[0].clientY);
+            this.image.x = this.image.x - (this.pressPos.x - event.changedTouches[0].clientX);
+            this.image.y = this.image.y - (this.pressPos.y - event.changedTouches[0].clientY);
             this._correctEdge();
+        }
+
+        // 手指已经全部挪开
+        if (event.targetTouches.length === 0) {
+            this.handleMode = HandleMode.NONE;
         }
     }
 
@@ -366,7 +425,7 @@ class ImageCropper {
      * 进行裁切
      * @public
      */
-    crop() {
+    async crop() {
 
         // 得到真实缩放的比例
         const scale = this.image.ele.naturalWidth / this.image.width,
@@ -377,17 +436,16 @@ class ImageCropper {
             dw = this.cropper.width,
             dh = this.cropper.height;
 
-        if (this.ctx) {
-            this.ctx.clearRect(0 ,0, dw, dh);
-            this.ctx.drawImage(this.image.ele, sx, sy, sw, sh, 0, 0, dw, dh);
+        const canvas = document.createElement('canvas');
+        canvas.width = dw;
+        canvas.height = dh;
+        this.ctx = canvas.getContext('2d');
+        this.ctx.drawImage(this.image.ele, sx, sy, sw, sh, 0, 0, dw, dh);
+
+        if (this.options.quality < 1) {
+            return canvas.toDataURL('image/jpeg', this.options.quality);
         } else {
-            const canvas = document.createElement('canvas');
-            canvas.width = dw;
-            canvas.height = dh;
-            canvas.style.backgroundColor = '#ccc';
-            this.ctx = canvas.getContext('2d');
-            this.ctx.drawImage(this.image.ele, sx, sy, sw, sh, 0, 0, dw, dh);
-            this.rootElement.append(canvas);
+            return canvas.toDataURL('image/png');
         }
     }
 }

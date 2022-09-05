@@ -1,6 +1,5 @@
 /**
  * 计算两点距离
- * 求点点距离公式 √( (x2 - x1)^2 + (y2 - y1)^2 )
  */
 function pointsDistance([x1, y1], [x2, y2]) {
     return Math.sqrt((x2 - x1)**2 + (y2 - y1)**2);
@@ -33,6 +32,7 @@ const IS_MOBILE_DEVICE = document.documentElement ? 'ontouchstart' in document.d
 // 屏幕宽度
 const SCREEN_WIDTH = document.body.clientWidth;
 
+// 获取一个值的真实类型
 const naturalType = value => Object.prototype.toString.call(value).slice(8, -1);
 
 /**
@@ -60,6 +60,7 @@ function mergeOptions(left, right) {
  * @readonly
  */
 const HandleMode = {
+    NONE: 0,
     MOVE: 1,
     ZOOM: 2
 };

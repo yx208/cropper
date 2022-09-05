@@ -4,6 +4,7 @@ declare interface ImageCropperOptions {
     height?: number
     src: HTMLImageElement
     root: string
+    quality?: number
     cropper?: {
         width: number
         height: number
@@ -30,6 +31,11 @@ declare interface CropperImage {
     ratio: number
     width: number
     height: number
+    x: number
+    y: number
+}
+
+declare interface CropperPosition {
     x: number
     y: number
 }

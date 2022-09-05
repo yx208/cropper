@@ -14,12 +14,16 @@ image.src = localImage;
 image.onload = () => {
     instance = new ImageCropper({
         src: image,
-        root: 'container'
+        root: 'container',
+        // width: 600,
+        // height: 600,
     });
 };
 
-function onClip() {
-    instance && instance.crop();
+async function onClip() {
+    const data = await instance.crop();
+    const img = document.getElementById('demo-img');
+    img.src = data;
 }
 
 </script>
@@ -32,5 +36,6 @@ function onClip() {
                 <button @click="onClip">裁剪图片</button>
             </div>
         </div>
+        <img id="demo-img" width="300" src="" alt="">
     </div>
 </template>
