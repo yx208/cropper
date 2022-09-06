@@ -1,7 +1,7 @@
 <script setup>
 
 import ImageCropper from "../lib/ImageCropper/index.js";
-import '../lib/ImageCropper/style.css';
+import '../lib/ImageCropper/styles/style.css';
 // import localImage from '../assets/ia.png';
 import localImage from '../assets/uw.png';
 // import localImage from '../assets/ag.png';

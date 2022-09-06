@@ -1,10 +1,10 @@
 import {createCropperBox} from "./template.js";
 import {defaultOptions} from "./default.js";
+import { IS_MOBILE_DEVICE } from "./constants.js";
+import { HandleMode, AdjustDirection } from './tools.js';
 import {
     mergeOptions,
-    pointsDistance,
-    IS_MOBILE_DEVICE,
-    HandleMode
+    pointsDistance
 } from "./util.js";
 
 class ImageCropper {
@@ -87,11 +87,18 @@ class ImageCropper {
     scaleDistance = 0;
 
     /**
-     * @description 手指触摸的数量
+     * @description 处理模式
      * @type {HandleMode}
      * @private
      */
     handleMode = HandleMode.NONE;
+
+    /**
+     * @description 调整方向
+     * @type {AdjustDirection}
+     * @private
+     */
+    adjustDirection = AdjustDirection.NONE;
 
     /**
      * @param {ImageCropperOptions} options
@@ -112,7 +119,7 @@ class ImageCropper {
      * 绑定事件
      * @private
      */
-    _bindEvent() {
+    _bindContainerEvent() {
         if (IS_MOBILE_DEVICE) {
             this.container.ele.addEventListener('touchstart', this._onTouchStart.bind(this), { passive: false });
             this.container.ele.addEventListener('touchmove', this._onTouchMove.bind(this), { passive: false });
@@ -124,6 +131,66 @@ class ImageCropper {
             this.container.ele.addEventListener('mouseleave', this._onMouseup.bind(this), { passive: false });
             this.container.ele.addEventListener('wheel', this._onMouseWheel.bind(this), { passive: false });
         }
+    }
+
+    /**
+     * 绑定事件
+     * @private
+     */
+    _bindCropperBox() {
+        if (IS_MOBILE_DEVICE) {
+            // TODO
+        } else {
+            [...this.cropper.ele.children].forEach(ele => {
+                ele.onmousedown = this._onCropperBoxStart.bind(this);
+                ele.onmousemove = this._onCropperBoxMove.bind(this);
+                ele.onmouseup = this._onCropperBoxEnd.bind(this);
+            });
+        }
+    }
+
+    /**
+     * @private
+     * @param {MouseEvent} event
+     */
+    _onCropperBoxStart(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.pressPos.x = event.clientX;
+        this.pressPos.y = event.clientY;
+
+        const dir = event.target.getAttribute('data-dir');
+        this.adjustDirection = AdjustDirection[dir];
+    }
+
+    /**
+     * @private
+     * @param {MouseEvent} event
+     */
+    _onCropperBoxMove(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (this.adjustDirection === AdjustDirection.NONE) return;
+
+        this.pressPos.x = event.clientX;
+        this.pressPos.y = event.clientY;
+
+        switch (this.adjustDirection) {
+            case AdjustDirection.EAST:
+                // 东
+        }
+    }
+
+    /**
+     * @private
+     * @param {MouseEvent} event
+     */
+    _onCropperBoxEnd(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        this.adjustDirection = AdjustDirection.NONE;
     }
 
     /**
@@ -139,7 +206,7 @@ class ImageCropper {
         this.container.ele.className = 'image-cropper-container';
         this.container.ele.style.cssText = `width: ${width}px; height: ${height}px`;
 
-        this._bindEvent();
+        this._bindContainerEvent();
     }
 
     /**
@@ -200,6 +267,7 @@ class ImageCropper {
         `;
         this.cropper.ele = ele;
         this.container.ele.append(this.cropper.ele);
+        this._bindCropperBox();
     }
 
     /**

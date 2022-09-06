@@ -1,4 +1,4 @@
-import { SCREEN_WIDTH } from "./util.js";
+import { SCREEN_WIDTH } from "./constants.js";
 
 const defaultOptions = {
 
@@ -15,7 +15,7 @@ const defaultOptions = {
 
     // The quality of the output image, the value 0..=1
     quality: 1,
-    
+
     // Defaults to base64, may add a 'blob' in the future
     output: 'base64',
 };

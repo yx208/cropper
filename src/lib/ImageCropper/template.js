@@ -1,17 +1,17 @@
 
 const CROPPER_BOX_TPL = (
-    '<div class="cropper-box-line line-t"></div>' +
-    '<div class="cropper-box-line line-r"></div>' +
-    '<div class="cropper-box-line line-b"></div>' +
-    '<div class="cropper-box-line line-l"></div>' +
-    '<div class="cropper-box-dot dot-tl"></div>' +
-    '<div class="cropper-box-dot dot-tc"></div>' +
-    '<div class="cropper-box-dot dot-tr"></div>' +
-    '<div class="cropper-box-dot dot-lc"></div>' +
-    '<div class="cropper-box-dot dot-rc"></div>' +
-    '<div class="cropper-box-dot dot-bl"></div>' +
-    '<div class="cropper-box-dot dot-bc"></div>' +
-    '<div class="cropper-box-dot dot-br"></div>'
+    '<div class="cropper-box-line line-north" data-dir="NORTH"></div>' +
+    '<div class="cropper-box-line line-east" data-dir="EAST"></div>' +
+    '<div class="cropper-box-line line-south" data-dir="SOUTH"></div>' +
+    '<div class="cropper-box-line line-west" data-dir="WEST"></div>' +
+    '<div class="cropper-box-dot dot-northwest" data-dir="NORTHWEST"></div>' +
+    '<div class="cropper-box-dot dot-north" data-dir="NORTH"></div>' +
+    '<div class="cropper-box-dot dot-northeast" data-dir="NORTHEAST"></div>' +
+    '<div class="cropper-box-dot dot-west" data-dir="WEST"></div>' +
+    '<div class="cropper-box-dot dot-east" data-dir="EAST"></div>' +
+    '<div class="cropper-box-dot dot-southwest" data-dir="SOUTHWEST"></div>' +
+    '<div class="cropper-box-dot dot-south" data-dir="SOUTH"></div>' +
+    '<div class="cropper-box-dot dot-southeast" data-dir="SOUTHEAST"></div>'
 );
 
 /**

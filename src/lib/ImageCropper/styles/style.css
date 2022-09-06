@@ -31,25 +31,25 @@
     height: 100%;
 }
 
-.cropper-box-line.line-l {
+.cropper-box-line.line-west {
     cursor: ew-resize;
     left: -3px;
     top: 0;
     width: 5px;
 }
-.cropper-box-line.line-r {
+.cropper-box-line.line-east {
     cursor: ew-resize;
     right: -3px;
     top: 0;
     width: 5px;
 }
-.cropper-box-line.line-b {
+.cropper-box-line.line-south {
     bottom: -3px;
     cursor: ns-resize;
     height: 5px;
     left: 0;
 }
-.cropper-box-line.line-t {
+.cropper-box-line.line-north {
     cursor: ns-resize;
     height: 5px;
     left: 0;
@@ -66,53 +66,53 @@
     height: 5px;
 }
 
-.cropper-box-dot.dot-rc {
+.cropper-box-dot.dot-east {
     cursor: ew-resize;
     margin-top: -3px;
     right: -3px;
     top: 50%;
 }
 
-.cropper-box-dot.dot-tc {
+.cropper-box-dot.dot-north {
     cursor: ns-resize;
     left: 50%;
     margin-left: -3px;
     top: -3px;
 }
 
-.cropper-box-dot.dot-tr {
+.cropper-box-dot.dot-northeast {
     cursor: nesw-resize;
     right: -3px;
     top: -3px;
 }
 
-.cropper-box-dot.dot-tl {
+.cropper-box-dot.dot-northwest {
     cursor: nwse-resize;
     left: -3px;
     top: -3px;
 }
 
-.cropper-box-dot.dot-lc {
+.cropper-box-dot.dot-west {
     cursor: ew-resize;
     left: -3px;
     margin-top: -3px;
     top: 50%;
 }
 
-.cropper-box-dot.dot-bl {
+.cropper-box-dot.dot-southwest {
     bottom: -3px;
     cursor: nesw-resize;
     left: -3px;
 }
 
-.cropper-box-dot.dot-bc {
+.cropper-box-dot.dot-south {
     cursor: s-resize;
     bottom: -3px;
     left: 50%;
     margin-left: -3px;
 }
 
-.cropper-box-dot.dot-br {
+.cropper-box-dot.dot-southeast {
     cursor: nwse-resize;
     bottom: -3px;
     right: -3px;
