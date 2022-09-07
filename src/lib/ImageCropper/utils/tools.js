@@ -6,7 +6,8 @@
 export const HandleMode = {
     NONE: 0,
     MOVE: 1,
-    ZOOM: 2
+    ZOOM: 2,
+    ADJUST: 3
 };
 
 /**

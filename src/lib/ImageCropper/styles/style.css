@@ -33,27 +33,27 @@
 
 .cropper-box-line.line-west {
     cursor: ew-resize;
-    left: -3px;
+    left: -6px;
     top: 0;
-    width: 5px;
+    width: 12px;
 }
 .cropper-box-line.line-east {
     cursor: ew-resize;
-    right: -3px;
+    right: -6px;
     top: 0;
-    width: 5px;
+    width: 12px;
 }
 .cropper-box-line.line-south {
-    bottom: -3px;
+    bottom: -6px;
     cursor: ns-resize;
-    height: 5px;
+    height: 12px;
     left: 0;
 }
 .cropper-box-line.line-north {
     cursor: ns-resize;
-    height: 5px;
+    height: 12px;
     left: 0;
-    top: -3px;
+    top: -6px;
 }
 
 /* ========== dot ========== */

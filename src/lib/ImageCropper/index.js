@@ -1,11 +1,11 @@
-import {createCropperBox} from "./template.js";
-import {defaultOptions} from "./default.js";
-import { IS_MOBILE_DEVICE } from "./constants.js";
-import { HandleMode, AdjustDirection } from './tools.js';
+import {createCropperBox} from "./utils/template.js";
+import {defaultOptions} from "./utils/default.js";
+import { IS_MOBILE_DEVICE } from "./utils/constants.js";
+import { HandleMode, AdjustDirection } from './utils/tools.js';
 import {
     mergeOptions,
     pointsDistance
-} from "./util.js";
+} from "./utils/util.js";
 
 class ImageCropper {
 
@@ -137,59 +137,76 @@ class ImageCropper {
      * 绑定事件
      * @private
      */
-    _bindCropperBox() {
+    _bindCropperBoxEvent() {
         if (IS_MOBILE_DEVICE) {
-            // TODO
+            this.cropper.ele.addEventListener('touchstart', this._onCropperBoxStart.bind(this), { passive: false });
+            this.cropper.ele.addEventListener('touchend', this._onCropperBoxEnd.bind(this), { passive: false });
         } else {
-            [...this.cropper.ele.children].forEach(ele => {
-                ele.onmousedown = this._onCropperBoxStart.bind(this);
-                ele.onmousemove = this._onCropperBoxMove.bind(this);
-                ele.onmouseup = this._onCropperBoxEnd.bind(this);
-            });
+            this.cropper.ele.addEventListener('mousedown', this._onCropperBoxStart.bind(this), { passive: false });
+            this.cropper.ele.addEventListener('mouseup', this._onCropperBoxEnd.bind(this), { passive: false });
         }
     }
 
     /**
      * @private
-     * @param {MouseEvent} event
+     * @param {MouseEvent | TouchEvent} event
      */
     _onCropperBoxStart(event) {
         event.preventDefault();
         event.stopPropagation();
 
-        this.pressPos.x = event.clientX;
-        this.pressPos.y = event.clientY;
+        if (this.handleMode !== HandleMode.NONE && this.adjustDirection !== AdjustDirection.NONE)
+            return;
+
+        this.pressPos.x = event.clientX ?? event.touches[0].clientX;
+        this.pressPos.y = event.clientY ?? event.touches[0].clientY;
 
         const dir = event.target.getAttribute('data-dir');
+        this.handleMode = HandleMode.ADJUST;
         this.adjustDirection = AdjustDirection[dir];
     }
 
     /**
      * @private
-     * @param {MouseEvent} event
-     */
-    _onCropperBoxMove(event) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        if (this.adjustDirection === AdjustDirection.NONE) return;
-
-        this.pressPos.x = event.clientX;
-        this.pressPos.y = event.clientY;
-
-        switch (this.adjustDirection) {
-            case AdjustDirection.EAST:
-                // 东
-        }
-    }
-
-    /**
-     * @private
-     * @param {MouseEvent} event
+     * @param {MouseEvent | TouchEvent} event
      */
     _onCropperBoxEnd(event) {
+
         event.preventDefault();
         event.stopPropagation();
+
+        if (this.handleMode === HandleMode.NONE || this.adjustDirection === AdjustDirection.NONE)
+            return;
+
+        const moveX = this.pressPos.x - (event.clientX ?? event.changedTouches[0].clientX);
+        const moveY = this.pressPos.y - (event.clientY ?? event.changedTouches[0].clientY);
+        switch (this.adjustDirection) {
+            case AdjustDirection.EAST: {
+                // 可能框的大小超过图片，由于框的限制处理不在这，所以取框最新的宽度即可
+                this.cropper.width = parseFloat(this.cropper.ele.style.width);
+                break;
+            }
+            case AdjustDirection.WEST: {
+                // 最后设置的宽度 - 最开始的宽度 = 移动的距离
+                const move = parseFloat(this.cropper.ele.style.width) - this.cropper.width;
+                this.cropper.x -= move;
+                this.cropper.width += move;
+                break;
+            }
+            case AdjustDirection.SOUTH: {
+                // 可能框的大小超过图片，由于框的限制处理不在这，所以取框最新的宽度即可
+                this.cropper.height = parseFloat(this.cropper.ele.style.height);
+                break;
+            }
+            case AdjustDirection.NORTH: {
+                // 最后设置的高度 - 最开始的高度 = 移动的距离
+                const move = parseFloat(this.cropper.ele.style.height) - this.cropper.height;
+                this.cropper.y -= move;
+                this.cropper.height += move;
+                break;
+            }
+        }
+
         this.adjustDirection = AdjustDirection.NONE;
     }
 
@@ -253,7 +270,7 @@ class ImageCropper {
      * @private
      */
     _initCropper() {
-        // 宽高默认正方形，且大小为屏幕的 76%
+
         this.cropper.width = this.options.cropper.width;
         this.cropper.height = this.options.cropper.height;
         this.cropper.x = (this.container.width - this.cropper.width) / 2;
@@ -267,10 +284,11 @@ class ImageCropper {
         `;
         this.cropper.ele = ele;
         this.container.ele.append(this.cropper.ele);
-        this._bindCropperBox();
+        this._bindCropperBoxEvent();
     }
 
     /**
+     * 挂在到容器
      * @private
      */
     _mount() {
@@ -294,7 +312,6 @@ class ImageCropper {
 
     /**
      * 鼠标摁下移动
-     *
      * @param {MouseEvent} event
      * @private
      */
@@ -305,14 +322,62 @@ class ImageCropper {
 
         if (this.handleMode === HandleMode.NONE) return;
 
+        // 移动了的距离
         const moveX = this.pressPos.x - event.clientX;
         const moveY = this.pressPos.y - event.clientY;
-        this.image.ele.style.transform = `translate3d(${this.image.x - moveX}px, ${this.image.y - moveY}px, 0)`;
+
+        if (this.handleMode === HandleMode.MOVE) {
+            this.image.ele.style.transform = `translate3d(${this.image.x - moveX}px, ${this.image.y - moveY}px, 0)`;
+        } else if (this.handleMode === HandleMode.ADJUST) {
+            this._handleCropperAdjust(moveX, moveY);
+        }
+    }
+
+    /**
+     * 调整裁切框大小
+     * @param {number} x - 触摸开始点跟当前移动点的 x 距离
+     * @param {number} y - 触摸开始点跟当前移动点的 y 距离
+     * @private
+     */
+    _handleCropperAdjust(x, y) {
+        switch (this.adjustDirection) {
+            case AdjustDirection.EAST: {
+                const value = this.cropper.width - x;
+                if (value + this.cropper.x <= this.image.x + this.image.width)
+                    this.cropper.ele.style.width = value + 'px';
+                break;
+            }
+            case AdjustDirection.WEST: {
+                if (this.cropper.x - x >= this.image.x) {
+                    this.cropper.ele.style.cssText = `
+                        width: ${this.cropper.width + x}px;
+                        height: ${this.cropper.height}px;
+                        transform: translate3d(${this.cropper.x - x}px, ${this.cropper.y}px, 0);
+                    `;
+                }
+                break;
+            }
+            case AdjustDirection.SOUTH: {
+                const value = this.cropper.height - y;
+                if (value + this.cropper.y <= this.image.height + this.image.y)
+                    this.cropper.ele.style.height = value + 'px';
+                break;
+            }
+            case AdjustDirection.NORTH: {
+                if (this.cropper.y - y >= this.image.y) {
+                    this.cropper.ele.style.cssText = `
+                        width: ${this.cropper.width}px;
+                        height: ${this.cropper.height + y}px;
+                        transform: translate3d(${this.cropper.x}px, ${this.cropper.y - y}px, 0);
+                    `;
+                }
+                break;
+            }
+        }
     }
 
     /**
      * 鼠标弹起
-     *
      * @param {MouseEvent} event
      * @private
      */
@@ -323,9 +388,14 @@ class ImageCropper {
 
         if (this.handleMode === HandleMode.NONE) return;
 
-        this.image.x = this.image.x - (this.pressPos.x - event.clientX);
-        this.image.y = this.image.y - (this.pressPos.y - event.clientY);
-        this._correctEdge();
+        const x = this.pressPos.x - event.clientX;
+        const y = this.pressPos.y - event.clientY;
+        if (this.handleMode === HandleMode.ZOOM || this.handleMode === HandleMode.MOVE) {
+            this.image.x = this.image.x - x;
+            this.image.y = this.image.y - y;
+            this._correctEdge();
+        }
+
         this.handleMode = HandleMode.NONE;
     }
 
@@ -373,6 +443,10 @@ class ImageCropper {
             );
             this._zoomImage(distance > this.scaleDistance, 0.02);
             this.scaleDistance = distance;
+        } else if (this.handleMode === HandleMode.ADJUST) {
+            const moveX = this.pressPos.x - event.touches[0].clientX;
+            const moveY = this.pressPos.y - event.touches[0].clientY;
+            this._handleCropperAdjust(moveX, moveY);
         }
     }
 
