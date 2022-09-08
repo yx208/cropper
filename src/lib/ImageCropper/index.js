@@ -1,6 +1,6 @@
 import {createCropperBox} from "./utils/template.js";
 import {defaultOptions} from "./utils/default.js";
-import { IS_MOBILE_DEVICE } from "./utils/constants.js";
+import { IS_MOBILE_DEVICE, CROPPER_MIN_SIZE } from "./utils/constants.js";
 import { HandleMode, AdjustDirection } from './utils/tools.js';
 import {
     mergeOptions,
@@ -61,13 +61,6 @@ class ImageCropper {
         x: 0,
         y: 0
     };
-
-    /**
-     * @description Canvas 实例
-     * @type {CanvasRenderingContext2D}
-     * @private
-     */
-    ctx = null;
 
     /**
      * @description 摁下的位置
@@ -160,8 +153,8 @@ class ImageCropper {
         event.stopPropagation()
         event.preventDefault();
 
-        if (this.handleMode !== HandleMode.NONE && this.adjustDirection !== AdjustDirection.NONE)
-            return;
+        // if (this.handleMode !== HandleMode.NONE && this.adjustDirection !== AdjustDirection.NONE)
+        //     return;
 
         this.pressPos.x = event.clientX ?? event.touches[0].clientX;
         this.pressPos.y = event.clientY ?? event.touches[0].clientY;
@@ -207,6 +200,33 @@ class ImageCropper {
                 this.cropper.y -= move;
                 this.cropper.height += move;
                 break;
+            }
+            case AdjustDirection.SOUTHEAST: {
+                this.cropper.width = parseFloat(this.cropper.ele.style.width);
+                this.cropper.height = parseFloat(this.cropper.ele.style.height);
+                break;
+            }
+            case AdjustDirection.NORTHEAST: {
+                const move = parseFloat(this.cropper.ele.style.height) - this.cropper.height;
+                this.cropper.y -= move;
+                this.cropper.height += move;
+                this.cropper.width = parseFloat(this.cropper.ele.style.width);
+                break;
+            }
+            case AdjustDirection.SOUTHWEST: {
+                const move = parseFloat(this.cropper.ele.style.width) - this.cropper.width;
+                this.cropper.x -= move;
+                this.cropper.width += move;
+                this.cropper.height = parseFloat(this.cropper.ele.style.height);
+                break;
+            }
+            case AdjustDirection.NORTHWEST: {
+                const moveX = parseFloat(this.cropper.ele.style.width) - this.cropper.width;
+                const moveY = parseFloat(this.cropper.ele.style.height) - this.cropper.height;
+                this.cropper.x -= moveX;
+                this.cropper.y -= moveY;
+                this.cropper.width += moveX;
+                this.cropper.height += moveY;
             }
         }
 
@@ -340,52 +360,6 @@ class ImageCropper {
     }
 
     /**
-     * 调整裁切框大小
-     * @param {number} x - 触摸开始点跟当前移动点的 x 距离
-     * @param {number} y - 触摸开始点跟当前移动点的 y 距离
-     * @private
-     */
-    _handleCropperAdjust(x, y) {
-        switch (this.adjustDirection) {
-            case AdjustDirection.SOUTHEAST: {
-                break;
-            }
-            case AdjustDirection.EAST: {
-                const value = this.cropper.width - x;
-                if (value + this.cropper.x <= this.image.x + this.image.width)
-                    this.cropper.ele.style.width = value + 'px';
-                break;
-            }
-            case AdjustDirection.WEST: {
-                if (this.cropper.x - x >= this.image.x) {
-                    this.cropper.ele.style.cssText = `
-                        width: ${this.cropper.width + x}px;
-                        height: ${this.cropper.height}px;
-                        transform: translate3d(${this.cropper.x - x}px, ${this.cropper.y}px, 0);
-                    `;
-                }
-                break;
-            }
-            case AdjustDirection.SOUTH: {
-                const value = this.cropper.height - y;
-                if (value + this.cropper.y <= this.image.height + this.image.y)
-                    this.cropper.ele.style.height = value + 'px';
-                break;
-            }
-            case AdjustDirection.NORTH: {
-                if (this.cropper.y - y >= this.image.y) {
-                    this.cropper.ele.style.cssText = `
-                        width: ${this.cropper.width}px;
-                        height: ${this.cropper.height + y}px;
-                        transform: translate3d(${this.cropper.x}px, ${this.cropper.y - y}px, 0);
-                    `;
-                }
-                break;
-            }
-        }
-    }
-
-    /**
      * 鼠标弹起
      * @param {MouseEvent} event
      * @private
@@ -441,6 +415,8 @@ class ImageCropper {
         event.preventDefault();
         event.stopPropagation();
 
+        if (this.handleMode === HandleMode.NONE) return;
+
         if (this.handleMode === HandleMode.MOVE) {
             const moveX = this.pressPos.x - event.touches[0].clientX;
             const moveY = this.pressPos.y - event.touches[0].clientY;
@@ -477,6 +453,139 @@ class ImageCropper {
         // 手指已经全部挪开
         if (event.targetTouches.length === 0) {
             this.handleMode = HandleMode.NONE;
+        }
+    }
+
+    /**
+     * 调整裁切框大小
+     * @param {number} x - 触摸开始点 - 当前移动点的 x 距离，如果向右，则为负数
+     * @param {number} y - 触摸开始点 - 当前移动点的 y 距离，如果向下，则为负数
+     * @private
+     */
+    _handleCropperAdjust(x, y) {
+        switch (this.adjustDirection) {
+            case AdjustDirection.EAST: {
+                const value = this.cropper.width - x;
+                if (
+                    value + this.cropper.x <= this.image.x + this.image.width &&
+                    value >= CROPPER_MIN_SIZE
+                ) {
+                    this.cropper.ele.style.width = value + 'px';
+                }
+                break;
+            }
+            case AdjustDirection.WEST: {
+                if (this.cropper.x - x >= this.image.x && this.cropper.width + x >= CROPPER_MIN_SIZE) {
+                    this.cropper.ele.style.cssText = `
+                        width: ${this.cropper.width + x}px; height: ${this.cropper.height}px;
+                        transform: translate3d(${this.cropper.x - x}px, ${this.cropper.y}px, 0);
+                    `;
+                }
+                break;
+            }
+            case AdjustDirection.SOUTH: {
+                const value = this.cropper.height - y;
+                if (
+                    value + this.cropper.y <= this.image.height + this.image.y &&
+                    value >= CROPPER_MIN_SIZE
+                ) {
+                    this.cropper.ele.style.height = value + 'px';
+                }
+                break;
+            }
+            case AdjustDirection.NORTH: {
+                if (this.cropper.y - y >= this.image.y && this.cropper.height + y >= CROPPER_MIN_SIZE) {
+                    this.cropper.ele.style.cssText = `
+                        width: ${this.cropper.width}px; height: ${this.cropper.height + y}px;
+                        transform: translate3d(${this.cropper.x}px, ${this.cropper.y - y}px, 0);
+                    `;
+                }
+                break;
+            }
+            case AdjustDirection.SOUTHEAST: {
+                const adjustWidth = this.cropper.width - x;
+                const adjustHeight = this.cropper.height - y;
+                if (
+                    adjustWidth >= CROPPER_MIN_SIZE &&
+                    adjustHeight >= CROPPER_MIN_SIZE &&
+                    adjustWidth + this.cropper.x <= this.image.x + this.image.width &&
+                    adjustHeight + this.cropper.y <= this.image.height + this.image.y
+                ) {
+                    this.cropper.ele.style.width = adjustWidth + 'px';
+                    this.cropper.ele.style.height = adjustHeight + 'px';
+                }
+                break;
+            }
+            case AdjustDirection.NORTHEAST: {
+                // 位置上取巧
+                if (this.cropper.y - y >= this.image.y && this.cropper.height + y >= CROPPER_MIN_SIZE) {
+                    this.cropper.ele.style.cssText = `
+                        width: ${this.cropper.width}px; height: ${this.cropper.height + y}px;
+                        transform: translate3d(${this.cropper.x}px, ${this.cropper.y - y}px, 0);
+                    `;
+                }
+                const adjustWidth = this.cropper.width - x;
+                if (
+                    adjustWidth >= CROPPER_MIN_SIZE &&
+                    adjustWidth + this.cropper.x <= this.image.x + this.image.width
+                ) {
+                    this.cropper.ele.style.width = adjustWidth + 'px';
+                }
+
+                break;
+            }
+            case AdjustDirection.SOUTHWEST: {
+                if (this.cropper.x - x >= this.image.x && this.cropper.width + x >= CROPPER_MIN_SIZE) {
+                    this.cropper.ele.style.cssText = `
+                        width: ${this.cropper.width + x}px; height: ${this.cropper.height}px;
+                        transform: translate3d(${this.cropper.x - x}px, ${this.cropper.y}px, 0);
+                    `;
+                }
+                const value = this.cropper.height - y;
+                if (
+                    value >= CROPPER_MIN_SIZE &&
+                    value + this.cropper.y <= this.image.height + this.image.y
+                ) {
+                    this.cropper.ele.style.height = value + 'px';
+                }
+
+                break;
+            }
+            case AdjustDirection.NORTHWEST: {
+
+                let {
+                    x: _x,
+                    y: _y,
+                    width: _width,
+                    height: _height
+                } = this.cropper;
+
+                if (this.cropper.x - x >= this.image.x && _width + x >= CROPPER_MIN_SIZE) {
+                    _x -= x;
+                    _width += x;
+                } else {
+                    // 当前 cropper 元素宽度 - cropper 对象保存的宽度 = 已经移动了的长度，高度与此相同
+                    const moveX = parseFloat(this.cropper.ele.style.width) - this.cropper.width;
+                    _width += moveX;
+                    _x -= moveX;
+                }
+
+                if (this.cropper.y - y >= this.image.y && _height + y >= CROPPER_MIN_SIZE) {
+                    _y -= y;
+                    _height += y;
+                } else {
+                    const moveY = parseFloat(this.cropper.ele.style.height) - this.cropper.height;
+                    _height += moveY;
+                    _y -= moveY;
+                }
+
+                this.cropper.ele.style.cssText = `
+                    width: ${_width}px; height: ${_height}px;
+                    transform: translate3d(${_x}px, ${_y}px, 0);
+                `;
+
+                break;
+            }
         }
     }
 
@@ -590,8 +699,8 @@ class ImageCropper {
         const canvas = document.createElement('canvas');
         canvas.width = dw;
         canvas.height = dh;
-        this.ctx = canvas.getContext('2d');
-        this.ctx.drawImage(this.image.ele, sx, sy, sw, sh, 0, 0, dw, dh);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(this.image.ele, sx, sy, sw, sh, 0, 0, dw, dh);
 
         if (this.options.quality < 1) {
             return canvas.toDataURL('image/jpeg', this.options.quality);
