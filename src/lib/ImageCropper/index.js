@@ -139,11 +139,15 @@ class ImageCropper {
      */
     _bindCropperBoxEvent() {
         if (IS_MOBILE_DEVICE) {
-            this.cropper.ele.addEventListener('touchstart', this._onCropperBoxStart.bind(this), { passive: false });
-            this.cropper.ele.addEventListener('touchend', this._onCropperBoxEnd.bind(this), { passive: false });
+            [...this.cropper.ele.children].forEach(ele => {
+                ele.addEventListener('touchstart', this._onCropperBoxStart.bind(this), { passive: false });
+                ele.addEventListener('touchend', this._onCropperBoxEnd.bind(this), { passive: false });
+            });
         } else {
-            this.cropper.ele.addEventListener('mousedown', this._onCropperBoxStart.bind(this), { passive: false });
-            this.cropper.ele.addEventListener('mouseup', this._onCropperBoxEnd.bind(this), { passive: false });
+            [...this.cropper.ele.children].forEach(ele => {
+                ele.addEventListener('mousedown', this._onCropperBoxStart.bind(this), { passive: false });
+                ele.addEventListener('mouseup', this._onCropperBoxEnd.bind(this), { passive: false });
+            });
         }
     }
 
@@ -152,8 +156,9 @@ class ImageCropper {
      * @param {MouseEvent | TouchEvent} event
      */
     _onCropperBoxStart(event) {
+
+        event.stopPropagation()
         event.preventDefault();
-        event.stopPropagation();
 
         if (this.handleMode !== HandleMode.NONE && this.adjustDirection !== AdjustDirection.NONE)
             return;
@@ -178,8 +183,6 @@ class ImageCropper {
         if (this.handleMode === HandleMode.NONE || this.adjustDirection === AdjustDirection.NONE)
             return;
 
-        const moveX = this.pressPos.x - (event.clientX ?? event.changedTouches[0].clientX);
-        const moveY = this.pressPos.y - (event.clientY ?? event.changedTouches[0].clientY);
         switch (this.adjustDirection) {
             case AdjustDirection.EAST: {
                 // 可能框的大小超过图片，由于框的限制处理不在这，所以取框最新的宽度即可
@@ -208,6 +211,7 @@ class ImageCropper {
         }
 
         this.adjustDirection = AdjustDirection.NONE;
+        this.handleMode = HandleMode.NONE;
     }
 
     /**
@@ -320,6 +324,7 @@ class ImageCropper {
         event.preventDefault();
         event.stopPropagation();
 
+        // 没有东西在处理
         if (this.handleMode === HandleMode.NONE) return;
 
         // 移动了的距离
@@ -331,6 +336,7 @@ class ImageCropper {
         } else if (this.handleMode === HandleMode.ADJUST) {
             this._handleCropperAdjust(moveX, moveY);
         }
+
     }
 
     /**
@@ -341,6 +347,9 @@ class ImageCropper {
      */
     _handleCropperAdjust(x, y) {
         switch (this.adjustDirection) {
+            case AdjustDirection.SOUTHEAST: {
+                break;
+            }
             case AdjustDirection.EAST: {
                 const value = this.cropper.width - x;
                 if (value + this.cropper.x <= this.image.x + this.image.width)
