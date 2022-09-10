@@ -1,6 +1,6 @@
 import {createCropperBox} from "./utils/template.js";
 import {defaultOptions} from "./utils/default.js";
-import { IS_MOBILE_DEVICE, CROPPER_MIN_SIZE } from "./utils/constants.js";
+import { IS_MOBILE_DEVICE, CROPPER_MIN_SIZE, CROPPER_SCALE } from "./utils/constants.js";
 import { HandleMode, AdjustDirection } from './utils/tools.js';
 import {
     mergeOptions,
@@ -15,13 +15,6 @@ class ImageCropper {
      * @readonly
      */
     options = null;
-
-    /**
-     * @description 挂载的元素
-     * @type {HTMLElement}
-     * @private
-     */
-    rootElement = null;
 
     /**
      * @description 外层容器
@@ -99,7 +92,6 @@ class ImageCropper {
     constructor(options) {
 
         this.options = mergeOptions(defaultOptions, options);
-        this.rootElement = document.getElementById(this.options.root);
 
         this._initContainer();
         this._initImage();
@@ -153,8 +145,8 @@ class ImageCropper {
         event.stopPropagation()
         event.preventDefault();
 
-        // if (this.handleMode !== HandleMode.NONE && this.adjustDirection !== AdjustDirection.NONE)
-        //     return;
+        if (this.handleMode !== HandleMode.NONE && this.adjustDirection !== AdjustDirection.NONE)
+            return;
 
         this.pressPos.x = event.clientX ?? event.touches[0].clientX;
         this.pressPos.y = event.clientY ?? event.touches[0].clientY;
@@ -268,20 +260,13 @@ class ImageCropper {
             this.image.height = this.container.height;
         };
 
-        if (naturalWidth === naturalHeight) {
-            this.container.width >= this.container.height ? fillHeight() : fillWidth();
-        } else if (naturalWidth > naturalHeight) {
-            fillWidth();
-        } else {
-            fillHeight();
-        }
+        this.container.ratio > imageRatio ? fillHeight() : fillWidth();
 
         this.image.x = (this.container.width - this.image.width) / 2;
         this.image.y = (this.container.height - this.image.height) / 2;
         targetImage.className = 'cropper-image';
         targetImage.style.cssText = `
-            width: ${this.image.width}px;
-            height: ${this.image.height}px;
+            width: ${this.image.width}px; height: ${this.image.height}px;
             transform: translate(${this.image.x}px, ${this.image.y}px);
         `;
 
@@ -295,15 +280,21 @@ class ImageCropper {
      */
     _initCropper() {
 
-        this.cropper.width = this.options.cropper.width;
-        this.cropper.height = this.options.cropper.height;
-        this.cropper.x = (this.container.width - this.cropper.width) / 2;
-        this.cropper.y = (this.container.height - this.cropper.height) / 2;
+        // 当前裁框大于图片，按照比例缩小
+        let { width, height } = this.options.cropper;
+        const overflowRatio = Math.min(this.image.width / width, this.image.height / height);
+        if (overflowRatio < 1) {
+            height = height * overflowRatio * CROPPER_SCALE;
+            width = width * overflowRatio * CROPPER_SCALE;
+        }
+
+        this.cropper.x = (this.container.width - width) / 2;
+        this.cropper.y = (this.container.height - height) / 2;
 
         const ele = createCropperBox();
         ele.style.cssText = `
-            width: ${this.cropper.width}px;
-            height: ${this.cropper.height}px;
+            width: ${width}px;
+            height: ${height}px;
             transform: translate3d(${this.cropper.x}px, ${this.cropper.y}px, 0);
         `;
         this.cropper.ele = ele;
@@ -316,7 +307,8 @@ class ImageCropper {
      * @private
      */
     _mount() {
-        this.rootElement.append(this.container.ele);
+        const rootElement = document.getElementById(this.options.root);
+        rootElement.append(this.container.ele);
     }
 
     /**
