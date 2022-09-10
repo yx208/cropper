@@ -503,78 +503,116 @@ class ImageCropper {
                 break;
             }
             case AdjustDirection.SOUTHEAST: {
-                const adjustWidth = this.cropper.width - x;
-                const adjustHeight = this.cropper.height - y;
-                if (
-                    adjustWidth >= CROPPER_MIN_SIZE &&
-                    adjustHeight >= CROPPER_MIN_SIZE &&
-                    adjustWidth + this.cropper.x <= this.image.x + this.image.width &&
-                    adjustHeight + this.cropper.y <= this.image.height + this.image.y
-                ) {
-                    this.cropper.ele.style.width = adjustWidth + 'px';
-                    this.cropper.ele.style.height = adjustHeight + 'px';
-                }
-                break;
-            }
-            case AdjustDirection.NORTHEAST: {
-                // 位置上取巧
-                if (this.cropper.y - y >= this.image.y && this.cropper.height + y >= CROPPER_MIN_SIZE) {
-                    this.cropper.ele.style.cssText = `
-                        width: ${this.cropper.width}px; height: ${this.cropper.height + y}px;
-                        transform: translate3d(${this.cropper.x}px, ${this.cropper.y - y}px, 0);
-                    `;
-                }
-                const adjustWidth = this.cropper.width - x;
+
+                let { width: _width, height: _height } = this.cropper;
+
+                const adjustWidth = _width - x;
                 if (
                     adjustWidth >= CROPPER_MIN_SIZE &&
                     adjustWidth + this.cropper.x <= this.image.x + this.image.width
                 ) {
-                    this.cropper.ele.style.width = adjustWidth + 'px';
+                    _width = adjustWidth;
+                } else {
+                    _width = parseFloat(this.cropper.ele.style.width);
                 }
+
+                const adjustHeight = _height - y;
+                if (
+                    adjustHeight >= CROPPER_MIN_SIZE &&
+                    adjustHeight + this.cropper.y <= this.image.height + this.image.y
+                ) {
+                    _height = adjustHeight;
+                } else {
+                    _height = parseFloat(this.cropper.ele.style.height);
+                }
+
+                this.cropper.ele.style.width = _width + 'px';
+                this.cropper.ele.style.height = _height + 'px';
+
+                break;
+            }
+            case AdjustDirection.NORTHEAST: {
+
+                let { width: _width, height: _height, x: _x, y: _y } = this.cropper;
+
+                if (
+                    _y - y >= this.image.y &&
+                    _height + y >= CROPPER_MIN_SIZE
+                ) {
+                    _height += y;
+                    _y -= y;
+                } else {
+                    const moveY = parseFloat(this.cropper.ele.style.height) - _height;
+                    _height += moveY;
+                    _y -= moveY;
+                }
+
+                const adjustWidth = _width - x;
+                if (
+                    adjustWidth >= CROPPER_MIN_SIZE &&
+                    adjustWidth + _x <= this.image.x + this.image.width
+                ) {
+                    _width = adjustWidth;
+                } else {
+                    _width = parseFloat(this.cropper.ele.style.width);
+                }
+
+                this.cropper.ele.style.cssText = `
+                    width: ${_width}px; height: ${_height}px;
+                    transform: translate3d(${_x}px, ${_y}px, 0);
+                `;
 
                 break;
             }
             case AdjustDirection.SOUTHWEST: {
-                if (this.cropper.x - x >= this.image.x && this.cropper.width + x >= CROPPER_MIN_SIZE) {
-                    this.cropper.ele.style.cssText = `
-                        width: ${this.cropper.width + x}px; height: ${this.cropper.height}px;
-                        transform: translate3d(${this.cropper.x - x}px, ${this.cropper.y}px, 0);
-                    `;
+
+                let { x: _x, y: _y, width: _width, height: _height } = this.cropper;
+
+                if (_x - x >= this.image.x && _width + x >= CROPPER_MIN_SIZE) {
+                    _width += x;
+                    _x -= x;
+                } else {
+                    const moveX = parseFloat(this.cropper.ele.style.width) - _width;
+                    _width += moveX;
+                    _x -= moveX;
                 }
-                const value = this.cropper.height - y;
+
+                const adjustHeight = _height - y;
                 if (
-                    value >= CROPPER_MIN_SIZE &&
-                    value + this.cropper.y <= this.image.height + this.image.y
+                    adjustHeight >= CROPPER_MIN_SIZE &&
+                    adjustHeight + _y <= this.image.height + this.image.y
                 ) {
-                    this.cropper.ele.style.height = value + 'px';
+                    _height = adjustHeight;
+                } else {
+                    _height = parseFloat(this.cropper.ele.style.height);
                 }
+
+                this.cropper.ele.style.cssText = `
+                    width: ${_width}px; height: ${_height}px;
+                    transform: translate3d(${_x}px, ${_y}px, 0);
+                `;
 
                 break;
             }
             case AdjustDirection.NORTHWEST: {
 
-                let {
-                    x: _x,
-                    y: _y,
-                    width: _width,
-                    height: _height
-                } = this.cropper;
+                let { x: _x, y: _y, width: _width, height: _height } = this.cropper;
 
-                if (this.cropper.x - x >= this.image.x && _width + x >= CROPPER_MIN_SIZE) {
+                if (_x - x >= this.image.x && _width + x >= CROPPER_MIN_SIZE) {
                     _x -= x;
                     _width += x;
                 } else {
                     // 当前 cropper 元素宽度 - cropper 对象保存的宽度 = 已经移动了的长度，高度与此相同
-                    const moveX = parseFloat(this.cropper.ele.style.width) - this.cropper.width;
+                    const moveX = parseFloat(this.cropper.ele.style.width) - _width;
                     _width += moveX;
                     _x -= moveX;
                 }
 
-                if (this.cropper.y - y >= this.image.y && _height + y >= CROPPER_MIN_SIZE) {
+                if (_y - y >= this.image.y && _height + y >= CROPPER_MIN_SIZE) {
                     _y -= y;
                     _height += y;
                 } else {
-                    const moveY = parseFloat(this.cropper.ele.style.height) - this.cropper.height;
+                    const moveY = parseFloat(this.cropper.ele.style.height) - _height;
                     _height += moveY;
                     _y -= moveY;
                 }
