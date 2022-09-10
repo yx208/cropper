@@ -294,8 +294,7 @@ class ImageCropper {
 
         const ele = createCropperBox();
         ele.style.cssText = `
-            width: ${width}px;
-            height: ${height}px;
+            width: ${width}px; height: ${height}px;
             transform: translate3d(${this.cropper.x}px, ${this.cropper.y}px, 0);
         `;
         this.cropper.ele = ele;
