@@ -3,8 +3,8 @@
 import ImageCropper from "../lib/ImageCropper/index.js";
 import '../lib/ImageCropper/styles/style.css';
 // import localImage from '../assets/ia.png';
-// import localImage from '../assets/uw.png';
-import localImage from '../assets/ag.png';
+import localImage from '../assets/uw.png';
+// import localImage from '../assets/ag.png';
 
 /** @type {ImageCropper} */
 let instance = null;
@@ -15,8 +15,10 @@ image.onload = () => {
     instance = new ImageCropper({
         src: image,
         root: 'container',
-        width: 600,
-        height: 200,
+        cropper: {
+            width: 200,
+            height: 400
+        }
     });
 };
 

@@ -272,7 +272,6 @@ class ImageCropper {
 
         this.image.ele = targetImage;
         this.image.ratio = imageRatio;
-        this.container.ele.append(targetImage);
     }
 
     /**
@@ -290,6 +289,8 @@ class ImageCropper {
 
         this.cropper.x = (this.container.width - width) / 2;
         this.cropper.y = (this.container.height - height) / 2;
+        this.cropper.width = width;
+        this.cropper.height = height;
 
         const ele = createCropperBox();
         ele.style.cssText = `
@@ -298,7 +299,6 @@ class ImageCropper {
             transform: translate3d(${this.cropper.x}px, ${this.cropper.y}px, 0);
         `;
         this.cropper.ele = ele;
-        this.container.ele.append(this.cropper.ele);
         this._bindCropperBoxEvent();
     }
 
@@ -307,6 +307,8 @@ class ImageCropper {
      * @private
      */
     _mount() {
+        this.container.ele.append(this.image.ele);
+        this.container.ele.append(this.cropper.ele);
         const rootElement = document.getElementById(this.options.root);
         rootElement.append(this.container.ele);
     }
