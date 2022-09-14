@@ -113,7 +113,7 @@ class ImageCropper {
             this.container.ele.addEventListener('mousedown', this._onMousedown.bind(this), { passive: false });
             this.container.ele.addEventListener('mousemove', this._onMousemove.bind(this), { passive: false });
             this.container.ele.addEventListener('mouseup', this._onMouseup.bind(this), { passive: false });
-            this.container.ele.addEventListener('mouseleave', this._onMouseup.bind(this), { passive: false });
+            this.container.ele.addEventListener('mouseleave', this._onMouseLeave.bind(this), { passive: false });
             this.container.ele.addEventListener('wheel', this._onMouseWheel.bind(this), { passive: false });
         }
     }
@@ -349,7 +349,23 @@ class ImageCropper {
         } else if (this.handleMode === HandleMode.ADJUST) {
             this._handleCropperAdjust(moveX, moveY);
         }
+    }
 
+    /**
+     * 鼠标离开容器
+     * @param { MouseEvent | TouchEvent } event
+     * @private
+     */
+    _onMouseLeave(event) {
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        // 当鼠标或者手指离开容器时，调用他们的事件结束方法，进行处理
+        switch (this.handleMode) {
+            case HandleMode.MOVE: this._onMouseup(event); break;
+            case HandleMode.ADJUST: this._onCropperBoxEnd(event); break;
+        }
     }
 
     /**
@@ -362,7 +378,8 @@ class ImageCropper {
         event.preventDefault();
         event.stopPropagation();
 
-        if (this.handleMode === HandleMode.NONE) return;
+        if (this.handleMode === HandleMode.NONE || this.adjustDirection === AdjustDirection.NONE)
+            return;
 
         const x = this.pressPos.x - event.clientX;
         const y = this.pressPos.y - event.clientY;
