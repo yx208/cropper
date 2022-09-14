@@ -8,6 +8,7 @@
 引入文件
 ```javascript
 import ImageCropper from 'ImageCropper/index.js';
+import 'ImageCropper/styles/style.css';
 ```
 
 加载一张图片，等到图片 `onload` 之后，创建实例
