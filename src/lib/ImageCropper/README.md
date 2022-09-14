@@ -38,7 +38,7 @@ instance.crop();
 | width   | number | 指定容器宽度   |
 | height  | number | 指定容器高度   |
 | quality | number | 图片质量     |
-| Cropper | object | 裁切框，见下   |
+| cropper | Cropper | 裁切框，见下   |
 
 #### Cropper
 
